@@ -30,6 +30,9 @@ intel-trust-authority-as = ["as", "az-cvm-vtpm"]
 # Use aliyun KMS as KBS backend
 aliyun = ["kms/aliyun"]
 
+# Use hashicorp vault KMS as KBS backend
+hvault = []
+
 # Use pkcs11 plugin
 pkcs11 = ["cryptoki"]
 
@@ -81,6 +84,7 @@ uuid = { version = "1.2.2", features = ["serde", "v4"] }
 openssl.workspace = true
 az-cvm-vtpm = { version = "0.7.0", default-features = false, optional = true }
 derivative = "2.2.0"
+vaultrs = "0.7.4"
 
 [target.'cfg(not(any(target_arch = "s390x", target_arch = "aarch64")))'.dependencies]
 attestation-service = { path = "../attestation-service", default-features = false, features = [

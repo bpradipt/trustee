@@ -1,5 +1,6 @@
 AS_TYPE ?= coco-as
 ALIYUN ?= false
+HVAULT ?= false
 NEBULA_CA_PLUGIN ?= false
 
 BUILD_ARCH := $(shell uname -m)
@@ -47,6 +48,10 @@ endif
 
 ifeq ($(ALIYUN), true)
   FEATURES += aliyun
+endif
+
+ifeq ($(HVAULT), true)
+  FEATURES += hvault
 endif
 
 ifeq ($(NEBULA_CA_PLUGIN), true)
