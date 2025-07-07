@@ -43,20 +43,49 @@ sudo make -C ../../kbs install-cli
 
 ## Examples
 
+All these commands assume you are in the project root (`trustee`) folder.
+
 Get a resource from the KBS (after attesting)
 
 ```shell
-./kbs-client --url http://127.0.0.1:8080 get-resource --path my_repo/resource_type/123abc
+kbs-client --url http://127.0.0.1:8080 get-resource --path my_repo/resource_type/123abc
 ```
 
 Add a resource to the KBS
 
 ```shell
-./kbs-client --url http://127.0.0.1:8080 config --auth-private-key ../../kbs/config/private.key  set-resource --path my_repo/resource_type/123abc --resource-file test_resource
+./target/release/kbs-client --url http://127.0.0.1:8080 config --auth-private-key ./kbs/config/private.key  set-resource --path my_repo/resource_type/123abc --resource-file test_resource
 ```
 
 Set a resource policy
 ```shell
-./kbs-client --url http://127.0.0.1:8080 config --auth-private-key ../../kbs/config/private.key  set-resource-policy --policy-file allow_all.rego
+./target/release/kbs-client --url http://127.0.0.1:8080 config --auth-private-key ./kbs/config/private.key  set-resource-policy --policy-file ./kbs/sample_policies/allow_all.rego
 ```
 
+## Using TPM evidence
+
+Run KBS server in one terminal
+```sh
+sudo ./target/release/kbs --config-file ./kbs/config/kbs-config.toml 
+```
+
+Run kbs-client in another terminal
+
+Assuming you are still using the relaxed (allow_all..rego policy), run the following
+command to get resource
+
+```sh
+export ENABLE_SAMPLE_DEVICE="TPM"
+export TCTI="device:/dev/tpm1"
+./target/release/kbs-client --url http://127.0.0.1:8080  get-resource --path default/test/dummy
+```
+
+If you want to set custom policy, take a look at `sampledevice_pcrs.rego`.
+This uses PCRs in the additional-evidence sent for sample device.
+Adapt it for your use.
+
+Set the policy
+
+```sh
+./target/release/kbs-client --url http://127.0.0.1:8080 config --auth-private-key ./kbs/config/private.key set-resource-policy --policy-file  ./kbs/sample_policies/sampledevice_pcrs.rego
+```

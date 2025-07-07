@@ -12,11 +12,18 @@ use base64::Engine;
 use serde_json::json;
 
 #[derive(Serialize, Deserialize, Debug)]
+struct TpmQuote {
+    pub signature: String,
+    pub message: String,
+    pub pcrs: Vec<String>,
+}
+#[derive(Serialize, Deserialize, Debug)]
 struct SampleDeviceEvidence {
     svn: String,
 
     #[serde(default = "String::default")]
     report_data: String,
+    tpm_quote: Option<TpmQuote>,
 }
 
 #[derive(Debug, Default)]
