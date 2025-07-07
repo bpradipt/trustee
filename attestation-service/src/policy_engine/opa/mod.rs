@@ -70,6 +70,9 @@ impl PolicyEngine for OPA {
 
         let policy_file_path = format!("{policy_dir_path}/{policy_id}.rego");
 
+        // Log the policy file path for debugging
+        debug!("evaluate: Using policy file: {:?}", policy_file_path);
+
         let policy = tokio::fs::read_to_string(policy_file_path.clone())
             .await
             .map_err(PolicyError::ReadPolicyFileFailed)?;
@@ -170,6 +173,8 @@ impl PolicyEngine for OPA {
 
         for id in policy_ids.iter() {
             let policy_file_path = self.policy_dir_path.join(format!("{id}.rego"));
+            // Log the policy file path for debugging
+            debug!("list_policies: Using policy file: {:?}", policy_file_path);
             let policy = tokio::fs::read(policy_file_path)
                 .await
                 .map_err(PolicyError::ReadPolicyFileFailed)?;
@@ -188,6 +193,9 @@ impl PolicyEngine for OPA {
 
     async fn get_policy(&self, policy_id: String) -> Result<String, PolicyError> {
         let policy_file_path = self.policy_dir_path.join(format!("{policy_id}.rego"));
+        // Log the policy file path for debugging
+        debug!("get_policy: Using policy file: {:?}", policy_file_path);
+
         let policy = tokio::fs::read(policy_file_path)
             .await
             .map_err(PolicyError::ReadPolicyFileFailed)?;
