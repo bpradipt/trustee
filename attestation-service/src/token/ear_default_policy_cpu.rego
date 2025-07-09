@@ -211,7 +211,9 @@ executables := 3 if {
 	input.tpm.pcrs[11] in data.reference.tpm_pcr11
 }
 
-
+configuration := 2 if {
+	input.tpm.pcrs[11] in data.reference.tpm_pcr11
+}
 
 
 ##### SE TODO
