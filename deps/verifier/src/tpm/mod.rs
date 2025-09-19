@@ -15,7 +15,6 @@ use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use std::result::Result::Ok;
 use std::fs;
-use thiserror::Error;
 use tss_esapi::structures::Signature;
 use tss_esapi::traits::UnMarshall;
 
@@ -33,21 +32,6 @@ fn decode_hex(s: &str) -> Result<Vec<u8>, std::num::ParseIntError> {
         .collect()
 }
 
-#[derive(Error, Debug)]
-pub enum TpmVerifierError {
-    #[error("The provided AK public key is not in the list of trusted keys")]
-    UntrustedAkKey,
-    #[error("TPM quote nonce doesn't match expected report_data")]
-    NonceMismatch,
-    #[error("TPM PCR[8] doesn't match expected init_data_hash")]
-    InitDataMismatch,
-    #[error("Evidence field missing: {0}")]
-    MissingField(String),
-    #[error(transparent)]
-    Quote(#[from] az_cvm_vtpm::vtpm::QuoteError),
-    #[error(transparent)]
-    Anyhow(#[from] anyhow::Error),
-}
 
 #[derive(Deserialize, Debug)]
 pub struct Evidence {
@@ -239,7 +223,7 @@ fn verify_nonce(quote: &Quote, expected_report_data: &[u8]) -> Result<()> {
         Ok(())
     } else {
         debug!("Nonce and padded expected are different");
-        Err(TpmVerifierError::NonceMismatch.into())
+        bail!("TPM quote nonce doesn't match expected report_data")
     }
 }
 
@@ -258,7 +242,7 @@ fn verify_init_data(expected: &InitDataHash, quote: &Quote) -> Result<()> {
             if &digest == init_data_pcr {
                 Ok(())
             } else {
-                Err(TpmVerifierError::InitDataMismatch.into())
+                bail!("TPM PCR[8] doesn't match expected init_data_hash")
             }
         }
         InitDataHash::NotProvided => {
@@ -322,7 +306,7 @@ impl Verifier for TpmVerifier {
         let ak_public_hash = Sha256::digest(&ak_public_bytes).to_vec();
 
         if !self.trusted_ak_hashes.contains(&ak_public_hash) {
-            return Err(TpmVerifierError::UntrustedAkKey.into());
+            bail!("The provided AK public key is not in the list of trusted keys");
         }
 
         // 2. Verify the quote signature using the (now trusted) AK pubkey
@@ -396,38 +380,4 @@ mod tests {
         // verify_nonce(&quote, expected_data).unwrap();
     }
 
-    #[rstest]
-    fn test_verify_nonce_mismatch() {
-        // Mock quote and mismatched data - this would need real test data
-        // For now, just test that error type exists
-        let error = TpmVerifierError::NonceMismatch;
-        assert_eq!(
-            error.to_string(),
-            "TPM quote nonce doesn't match expected report_data"
-        );
-    }
-
-    #[rstest]
-    fn test_untrusted_ak_key_error() {
-        let error = TpmVerifierError::UntrustedAkKey;
-        assert_eq!(
-            error.to_string(),
-            "The provided AK public key is not in the list of trusted keys"
-        );
-    }
-
-    #[rstest]
-    fn test_init_data_mismatch_error() {
-        let error = TpmVerifierError::InitDataMismatch;
-        assert_eq!(
-            error.to_string(),
-            "TPM PCR[8] doesn't match expected init_data_hash"
-        );
-    }
-
-    #[rstest]
-    fn test_missing_field_error() {
-        let error = TpmVerifierError::MissingField("test_field".to_string());
-        assert_eq!(error.to_string(), "Evidence field missing: test_field");
-    }
 }
