@@ -10,10 +10,10 @@ TRUSTED_TPM_KEYS_DIR="$WORK_DIR"/tpm_trusted_keys
 TPM_STATE_DIR="/tmp/tpmdir"
 
 setup_swtpm() {
-    sudo modprobe tpm_vtpm_proxy
-    sudo mkdir -p "$TPM_STATE_DIR"
+    modprobe tpm_vtpm_proxy
+    mkdir -p "$TPM_STATE_DIR"
 
-    sudo swtpm_setup --tpm2 \
+    swtpm_setup --tpm2 \
                 --tpmstate "$TPM_STATE_DIR" \
                 --createek --decryption \
                 --create-ek-cert \
@@ -21,7 +21,7 @@ setup_swtpm() {
                 --pcr-banks - \
                 --display
 
-    sudo swtpm chardev --tpm2 \
+    swtpm chardev --tpm2 \
                 --tpmstate dir="$TPM_STATE_DIR" \
                 --vtpm-proxy \
                 --daemon \
@@ -31,9 +31,9 @@ setup_swtpm() {
 }
 
 stop_swtpm() {
-    sudo kill -9 $(cat "$TPM_STATE_DIR"/swtpm.pid)
+    kill -9 $(cat "$TPM_STATE_DIR"/swtpm.pid)
     echo "Deleting TPM state dir: $TPM_STATE_DIR"
-    sudo rm -rf "$TPM_STATE_DIR"
+    rm -rf "$TPM_STATE_DIR"
     echo "Deleting TPM keys"
     rm -rf "$TRUSTED_TPM_KEYS_DIR"
     rm -rf "$WORK_DIR/ak.ctx"
@@ -44,10 +44,10 @@ generate_ak() {
     
     mkdir -p "$TRUSTED_TPM_KEYS_DIR"
     # Create an AK using the EK context at 0x81010001
-    sudo tpm2_createak -C 0x81010001 -c "$WORK_DIR/ak.ctx" -G rsa -g sha256 -s rsassa -u "$TRUSTED_TPM_KEYS_DIR/ak.pub" -f pem
+    tpm2_createak -C 0x81010001 -c "$WORK_DIR/ak.ctx" -G rsa -g sha256 -s rsassa -u "$TRUSTED_TPM_KEYS_DIR/ak.pub" -f pem
     
     # Persist AK at handle 0x81010002
-    sudo tpm2_evictcontrol -c "$WORK_DIR/ak.ctx" 0x81010002 -T device:/dev/tpm0
+    tpm2_evictcontrol -c "$WORK_DIR/ak.ctx" 0x81010002 -T device:/dev/tpm0
     
     echo "AK created and persisted at handle 0x81010002"
     

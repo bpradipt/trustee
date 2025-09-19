@@ -395,13 +395,13 @@ install-swtpm-dependencies:
 .PHONY: setup-swtpm
 setup-swtpm:
 	@printf "${BOLD}Setting up swtpm${SGR0}\n"
-	./setup-swtpm.sh setup
+	sudo ./setup-swtpm.sh setup
 
 
 # Cleanup TPM-related files
 .PHONY: clean-tpm
 clean-tpm:
-	./setup-swtpm.sh cleanup
+	sudo ./setup-swtpm.sh cleanup
 
 .PHONY: clean
 clean:  clean-tpm
