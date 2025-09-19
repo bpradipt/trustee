@@ -239,14 +239,12 @@ fn extend_claim(claim: &mut TeeEvidenceParsedClaim, quote: &Quote) -> Result<()>
         bail!("failed to extend the claim, not an object");
     };
     let pcrs: Vec<&[u8; 32]> = quote.pcrs_sha256().collect();
-    let mut tpm_values = serde_json::Map::new();
     for (i, pcr) in pcrs.iter().enumerate() {
-        tpm_values.insert(
+        map.insert(
             format!("pcr{:02}", i),
             serde_json::Value::String(hex::encode(pcr)),
         );
     }
-    map.insert("tpm".to_string(), serde_json::Value::Object(tpm_values));
     map.insert(
         "init_data".into(),
         serde_json::Value::String(hex::encode(pcrs[INITDATA_PCR])),

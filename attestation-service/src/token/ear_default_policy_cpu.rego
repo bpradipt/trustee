@@ -219,7 +219,7 @@ hardware := 2 if {
 }
 
 executables := 3 if {
-	input.tpm.tpm.pcr11 in data.reference.tpm_pcr11
+	input.tpm.pcr11 in data.reference.tpm_pcr11
 }
 
 configuration := 0 if {
