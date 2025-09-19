@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use az_cvm_vtpm::vtpm::Quote;
 use base64::{engine::general_purpose, Engine};
 use hex;
-use log::{debug, warn};
+use log::{debug, info, warn};
 use openssl::pkey::PKey;
 use serde::Deserialize;
 use serde_json::{self, json};
@@ -24,8 +24,7 @@ pub mod config;
 
 const MAX_TRUSTED_AK_KEYS: usize = 100;
 const INITDATA_PCR: usize = 8;
-
-
+const TPM_REPORT_DATA_SIZE: usize = 64;
 
 #[derive(Deserialize, Debug)]
 pub struct Evidence {
@@ -127,51 +126,42 @@ impl Default for TpmVerifier {
 impl TpmVerifier {
     pub fn new(config: config::TpmVerifierConfig) -> Result<Self> {
         let mut trusted_ak_hashes = HashSet::new();
-        if let Some(keys_dir) = config.trusted_ak_keys_dir {
-            let entries = fs::read_dir(&keys_dir)?.collect::<Result<Vec<_>, _>>()?;
 
-            debug!("TPM verifier trusted keys dir {:?}", keys_dir);
+        let Some(keys_dir) = config.trusted_ak_keys_dir else {
+            return Ok(Self { trusted_ak_hashes });
+        };
 
-            if entries.len() > config.max_trusted_ak_keys {
-                warn!(
-                    "Number of trusted AK keys ({}) exceeds the limit ({}). Only the first {} keys will be loaded.",
-                    entries.len(),
-                    config.max_trusted_ak_keys,
-                    config.max_trusted_ak_keys
-                );
+        info!("TPM verifier trusted keys dir {:?}", keys_dir);
+
+        let entries = fs::read_dir(&keys_dir)?.collect::<Result<Vec<_>, _>>()?;
+
+        if entries.len() > config.max_trusted_ak_keys {
+            warn!(
+                "Number of trusted AK keys ({}) exceeds the limit ({}). Only the first {} keys will be loaded.",
+                entries.len(),
+                config.max_trusted_ak_keys,
+                config.max_trusted_ak_keys
+            );
+        }
+
+        for entry in entries.into_iter().take(config.max_trusted_ak_keys) {
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
             }
 
-            for entry in entries.into_iter().take(config.max_trusted_ak_keys) {
-                let path = entry.path();
-                if path.is_file() {
-                    // Only process files with .pub extension
-                    if let Some(extension) = path.extension() {
-                        if extension != "pub" {
-                            continue;
-                        }
-                    } else {
-                        // Skip files without extensions
-                        continue;
-                    }
-
-                    // Try to read as text first to avoid UTF-8 errors on binary files
-                    let key_content = match fs::read_to_string(&path) {
-                        Ok(content) => content,
-                        Err(_) => {
-                            // Skip files that can't be read as UTF-8 text
-                            debug!("Skipping non-UTF8 file: {:?}", path);
-                            continue;
-                        }
-                    };
-
-                    let pkey = PKey::public_key_from_pem(key_content.as_bytes())
-                        .context("Failed to parse PEM public key")?;
-                    let key_bytes = pkey.public_key_to_der()
-                        .context("Failed to convert PEM to DER")?;
-                    let hash = Sha256::digest(&key_bytes).to_vec();
-                    trusted_ak_hashes.insert(hash);
-                }
+            // Only process files with .pub extension
+            if path.extension() != Some("pub".as_ref()) {
+                continue;
             }
+
+            let key_content = fs::read_to_string(&path)?;
+            let pkey = PKey::public_key_from_pem(key_content.as_bytes())
+                .context("Failed to parse PEM public key")?;
+            let key_bytes = pkey.public_key_to_der()
+                .context("Failed to convert PEM to DER")?;
+            let hash = Sha256::digest(&key_bytes).to_vec();
+            trusted_ak_hashes.insert(hash);
         }
         Ok(Self { trusted_ak_hashes })
     }
@@ -207,10 +197,8 @@ fn verify_nonce(quote: &Quote, expected_report_data: &[u8]) -> Result<()> {
     debug!("Quote nonce ({} bytes): {}", nonce.len(), hex::encode(&nonce));
 
     // TPM attester pads report_data to 64 bytes, so we need to pad expected_report_data the same way
-    const TPM_REPORT_DATA_SIZE: usize = 64;
     let mut padded_expected = expected_report_data.to_vec();
     padded_expected.resize(TPM_REPORT_DATA_SIZE, 0);
-
 
     if nonce == padded_expected {
         debug!("TPM report_data verification completed successfully");
