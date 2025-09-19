@@ -7,6 +7,7 @@ use anyhow::*;
 use async_trait::async_trait;
 use az_cvm_vtpm::vtpm::Quote;
 use base64::{engine::general_purpose, Engine};
+use hex;
 use log::{debug, warn};
 use openssl::pkey::PKey;
 use serde::Deserialize;
@@ -24,13 +25,6 @@ pub mod config;
 const MAX_TRUSTED_AK_KEYS: usize = 100;
 const INITDATA_PCR: usize = 8;
 
-// Simple hex decode function since hex crate isn't available
-fn decode_hex(s: &str) -> Result<Vec<u8>, std::num::ParseIntError> {
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
-        .collect()
-}
 
 
 #[derive(Deserialize, Debug)]
@@ -103,7 +97,7 @@ impl QuoteStringFormat {
                     pcr_str.len()
                 );
             }
-            let pcr_bytes = decode_hex(pcr_str)
+            let pcr_bytes = hex::decode(pcr_str)
                 .with_context(|| format!("Failed to decode PCR from hex: {}", pcr_str))?;
             if pcr_bytes.len() != 32 {
                 bail!("PCR should be exactly 32 bytes, got {}", pcr_bytes.len());
