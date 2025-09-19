@@ -234,15 +234,12 @@ fn verify_nonce(quote: &Quote, expected_report_data: &[u8]) -> Result<()> {
     padded_expected.resize(TPM_REPORT_DATA_SIZE, 0);
 
 
-    match nonce == padded_expected {
-        true => {
-            debug!("TPM report_data verification completed successfully");
-            Ok(())
-        }
-        false => {
-            debug!("Nonce and padded expected are different");
-            Err(TpmVerifierError::NonceMismatch.into())
-        }
+    if nonce == padded_expected {
+        debug!("TPM report_data verification completed successfully");
+        Ok(())
+    } else {
+        debug!("Nonce and padded expected are different");
+        Err(TpmVerifierError::NonceMismatch.into())
     }
 }
 
@@ -258,9 +255,10 @@ fn verify_init_data(expected: &InitDataHash, quote: &Quote) -> Result<()> {
 
             let pcrs: Vec<&[u8; 32]> = quote.pcrs_sha256().collect();
             let init_data_pcr = pcrs[INITDATA_PCR];
-            match &digest == init_data_pcr {
-                true => Ok(()),
-                false => Err(TpmVerifierError::InitDataMismatch.into()),
+            if &digest == init_data_pcr {
+                Ok(())
+            } else {
+                Err(TpmVerifierError::InitDataMismatch.into())
             }
         }
         InitDataHash::NotProvided => {
@@ -323,9 +321,8 @@ impl Verifier for TpmVerifier {
         let ak_public_bytes = general_purpose::STANDARD.decode(&ev.ak_public)?;
         let ak_public_hash = Sha256::digest(&ak_public_bytes).to_vec();
 
-        match self.trusted_ak_hashes.contains(&ak_public_hash) {
-            true => {}
-            false => return Err(TpmVerifierError::UntrustedAkKey.into()),
+        if !self.trusted_ak_hashes.contains(&ak_public_hash) {
+            return Err(TpmVerifierError::UntrustedAkKey.into());
         }
 
         // 2. Verify the quote signature using the (now trusted) AK pubkey
@@ -335,11 +332,8 @@ impl Verifier for TpmVerifier {
         verify_pcrs(&ev.quote)?;
 
         // 4. Verify nonce/report data
-        match expected_report_data {
-            ReportData::Value(expected_report_data) => {
-                verify_nonce(&ev.quote, expected_report_data)?;
-            }
-            ReportData::NotProvided => {}
+        if let ReportData::Value(report_data) = expected_report_data {
+            verify_nonce(&ev.quote, report_data)?;
         }
 
         // 5. Verify init data hash
