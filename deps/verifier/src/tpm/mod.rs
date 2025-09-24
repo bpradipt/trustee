@@ -259,21 +259,18 @@ impl Verifier for TpmVerifier {
         expected_report_data: &ReportData,
         expected_init_data_hash: &InitDataHash,
     ) -> Result<Vec<(TeeEvidenceParsedClaim, TeeClass)>> {
-        // Try to deserialize in guest-components format first, then fall back to original format
-        let ev = if let std::result::Result::Ok(guest_ev) =
-            serde_json::from_value::<GuestComponentsEvidence>(evidence.clone())
-        {
-            let quote = guest_ev
-                .tpm_quote
-                .to_quote()
-                .context("Failed to convert quote from string format")?;
-            Evidence {
-                quote,
-                ak_public: guest_ev.ak_public,
-            }
-        } else {
-            serde_json::from_value::<Evidence>(evidence)
-                .context("Deserialize TPM Evidence failed.")?
+        // Convert guest-components evidence format to az-cvm-vtpm Quote format
+        let guest_ev = serde_json::from_value::<GuestComponentsEvidence>(evidence)
+            .context("Failed to deserialize TPM evidence from guest-components format")?;
+
+        let quote = guest_ev
+            .tpm_quote
+            .to_quote()
+            .context("Failed to convert guest-components quote to az-cvm-vtpm format")?;
+
+        let ev = Evidence {
+            quote,
+            ak_public: guest_ev.ak_public,
         };
 
         // 1. Check if the provided AK public key is trusted
