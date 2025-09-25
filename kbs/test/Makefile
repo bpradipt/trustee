@@ -377,10 +377,6 @@ test-vault-ssl: vault-kbs start-vault-ssl
 	cd $(PROJECT_DIR) && \
 	cargo test --features vault vault_ssl -- --ignored
 
-# TPM variables  
-TPM_CONFIG_FILE := $(KBS_CONFIG_PATH)/tpm-config.json
-export TPM_CONFIG_FILE
-
 # TPM dependencies installation
 .PHONY: install-swtpm-dependencies
 install-swtpm-dependencies:

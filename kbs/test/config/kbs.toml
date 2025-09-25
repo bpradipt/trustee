@@ -28,6 +28,10 @@ type = "BuiltIn"
 type = "LocalFs"
 file_path = "./work/attestation-service/reference_values"
 
+[attestation_service.verifiers.tpm]
+max_trusted_ak_keys = 100
+trusted_ak_keys_dir = "./work/trusted_tpm_ak_keys"
+
 [policy_engine]
 policy_path = "./work/kbs-policy.rego"
 
