@@ -14,15 +14,14 @@ use serde::Deserialize;
 use serde_json::{self, json};
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
-use std::result::Result::Ok;
 use std::fs;
+use std::result::Result::Ok;
 use tss_esapi::structures::Signature;
 use tss_esapi::traits::UnMarshall;
 
 use super::*;
 pub mod config;
 
-const MAX_TRUSTED_AK_KEYS: usize = 100;
 const INITDATA_PCR: usize = 8;
 const TPM_REPORT_DATA_SIZE: usize = 64;
 
@@ -46,7 +45,6 @@ pub struct QuoteStringFormat {
     pub message: String,   // base64 encoded
     pub pcrs: Vec<String>, // hex-encoded strings
 }
-
 
 impl QuoteStringFormat {
     fn to_quote(&self) -> Result<Quote> {
@@ -101,7 +99,8 @@ impl QuoteStringFormat {
             if pcr_bytes.len() != 32 {
                 bail!("PCR should be exactly 32 bytes, got {}", pcr_bytes.len());
             }
-            let pcr_array: [u8; 32] = pcr_bytes.try_into()
+            let pcr_array: [u8; 32] = pcr_bytes
+                .try_into()
                 .map_err(|_| anyhow!("PCR must be exactly 32 bytes"))?;
             pcrs.push(pcr_array);
         }
@@ -124,6 +123,21 @@ impl Default for TpmVerifier {
 }
 
 impl TpmVerifier {
+    /// Create TpmVerifier from verifiers config section
+    pub fn from_verifiers_config(verifiers_config: Option<&serde_json::Value>) -> Result<Self> {
+        let Some(verifiers_config) = verifiers_config else {
+            return Ok(Self::default());
+        };
+
+        let config = verifiers_config
+            .get("tpm")
+            .and_then(|tpm_config| serde_json::from_value(tmp_config.clone()).ok())
+            .unwrap_or_default();
+
+        Self::new(config)
+    }
+
+
     pub fn new(config: config::TpmVerifierConfig) -> Result<Self> {
         let mut trusted_ak_hashes = HashSet::new();
 
@@ -140,9 +154,8 @@ impl TpmVerifier {
             .filter_map(|entry_result| entry_result.ok())
             .filter(|entry| {
                 let path = entry.path();
-                path.is_file()
-                    && path.extension() == Some("pub".as_ref())
-                    // This implicitly filters out '.' and '..'
+                path.is_file() && path.extension() == Some("pub".as_ref())
+                // This implicitly filters out '.' and '..'
             })
             // The directory will not be read beyond this number of valid files
             .take(config.max_trusted_ak_keys);
@@ -153,7 +166,8 @@ impl TpmVerifier {
             let key_content = fs::read_to_string(&path)?;
             let pkey = PKey::public_key_from_pem(key_content.as_bytes())
                 .context("Failed to parse PEM public key")?;
-            let key_bytes = pkey.public_key_to_der()
+            let key_bytes = pkey
+                .public_key_to_der()
                 .context("Failed to convert PEM to DER")?;
             let hash = Sha256::digest(&key_bytes).to_vec();
             trusted_ak_hashes.insert(hash);
@@ -188,8 +202,16 @@ fn verify_pcrs(quote: &Quote) -> Result<()> {
 fn verify_nonce(quote: &Quote, expected_report_data: &[u8]) -> Result<()> {
     let nonce = quote.nonce()?;
 
-    debug!("Expected report_data ({} bytes): {}", expected_report_data.len(), hex::encode(expected_report_data));
-    debug!("Quote nonce ({} bytes): {}", nonce.len(), hex::encode(&nonce));
+    debug!(
+        "Expected report_data ({} bytes): {}",
+        expected_report_data.len(),
+        hex::encode(expected_report_data)
+    );
+    debug!(
+        "Quote nonce ({} bytes): {}",
+        nonce.len(),
+        hex::encode(&nonce)
+    );
 
     // TPM attester pads report_data to 64 bytes, so we need to pad expected_report_data the same way
     let mut padded_expected = expected_report_data.to_vec();
@@ -321,7 +343,7 @@ mod tests {
     fn test_tpm_verifier_new_empty_config() {
         let config = config::TpmVerifierConfig {
             trusted_ak_keys_dir: None,
-            max_trusted_ak_keys: MAX_TRUSTED_AK_KEYS,
+            max_trusted_ak_keys: DEFAULT_MAX_TRUSTED_AK_KEYS,
         };
         let verifier = TpmVerifier::new(config).unwrap();
         assert!(verifier.trusted_ak_hashes.is_empty());
@@ -330,7 +352,7 @@ mod tests {
     #[rstest]
     fn test_tpm_verifier_default_config() {
         let config = config::TpmVerifierConfig::default();
-        assert_eq!(config.max_trusted_ak_keys, MAX_TRUSTED_AK_KEYS);
+        assert_eq!(config.max_trusted_ak_keys, DEFAULT_MAX_TRUSTED_AK_KEYS);
         assert!(config.trusted_ak_keys_dir.is_none());
     }
 
@@ -342,14 +364,4 @@ mod tests {
         };
         assert_eq!(config.max_trusted_ak_keys, 50);
     }
-
-    #[rstest]
-    fn test_verify_nonce_success() {
-        // Mock quote and expected data - this would need real test data
-        // For now, just test the error cases we can test
-        let _expected_data = b"test_nonce";
-        // This test would need a real Quote object for full testing
-        // verify_nonce(&quote, expected_data).unwrap();
-    }
-
 }

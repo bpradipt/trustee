@@ -3,15 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 use serde::Deserialize;
-use std::path::{Path, PathBuf};
-use thiserror::Error;
+use std::path::PathBuf;
 
-use super::MAX_TRUSTED_AK_KEYS;
-
-#[derive(Deserialize, Debug, Default)]
-pub struct Config {
-    pub tpm_verifier: TpmVerifierConfig,
-}
+const DEFAULT_MAX_TRUSTED_AK_KEYS: usize = 100;
+const DEFAULT_TRUSTED_AK_KEYS_DIR: &str = "/opt/confidential-containers/trusted_tpm_ak_keys";
 
 #[derive(Deserialize, Debug)]
 pub struct TpmVerifierConfig {
@@ -22,30 +17,18 @@ pub struct TpmVerifierConfig {
 }
 
 fn default_max_trusted_ak_keys() -> usize {
-    MAX_TRUSTED_AK_KEYS
+    DEFAULT_MAX_TRUSTED_AK_KEYS
+}
+
+fn default_trusted_ak_keys_dir() -> PathBuf {
+    PathBuf::from(DEFAULT_TRUSTED_AK_KEYS_DIR)
 }
 
 impl Default for TpmVerifierConfig {
     fn default() -> Self {
         Self {
-            trusted_ak_keys_dir: None,
+            trusted_ak_keys_dir: Some(default_trusted_ak_keys_dir()),
             max_trusted_ak_keys: default_max_trusted_ak_keys(),
         }
     }
-}
-
-impl TryFrom<&Path> for Config {
-    type Error = ConfigError;
-    fn try_from(config_path: &Path) -> Result<Self, ConfigError> {
-        let file = std::fs::File::open(config_path)?;
-        serde_json::from_reader(file).map_err(ConfigError::JsonFileParse)
-    }
-}
-
-#[derive(Error, Debug)]
-pub enum ConfigError {
-    #[error("IO error: {0}")]
-    IO(#[from] std::io::Error),
-    #[error("failed to parse TPM config file: {0}")]
-    JsonFileParse(#[source] serde_json::Error),
 }

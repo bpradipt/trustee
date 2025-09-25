@@ -2,6 +2,7 @@ use crate::rvps::RvpsConfig;
 use crate::token::AttestationTokenConfig;
 
 use serde::Deserialize;
+use serde_json::Value;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -23,6 +24,10 @@ pub struct Config {
     /// The Attestation Result Token Broker Config
     #[serde(default)]
     pub attestation_token_broker: AttestationTokenConfig,
+
+    /// Optional verifier configurations (ignored by attestation-service, used by verifiers)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verifiers: Option<Value>,
 }
 
 fn default_work_dir() -> PathBuf {
@@ -48,6 +53,7 @@ impl Default for Config {
             work_dir: default_work_dir(),
             rvps_config: RvpsConfig::default(),
             attestation_token_broker: AttestationTokenConfig::default(),
+            verifiers: None,
         }
     }
 }
@@ -100,7 +106,8 @@ mod tests {
             issuer_name: "test".into(),
             signer: None,
             policy_dir: "/var/lib/attestation-service/policies".into(),
-        })
+        }),
+        verifiers: None,
     })]
     #[case("./tests/configs/example2.json", Config {
         work_dir: PathBuf::from("/var/lib/attestation-service/"),
@@ -117,7 +124,8 @@ mod tests {
                 cert_url: Some("https://example.io".into()),
                 cert_path: Some("/etc/cert.pem".into())
             })
-        })
+        }),
+        verifiers: None,
     })]
     #[case("./tests/configs/example3.json", Config {
         work_dir: PathBuf::from("/var/lib/attestation-service/"),
@@ -133,7 +141,8 @@ mod tests {
             developer_name: "someone".into(),
             build_name: "0.1.0".into(),
             profile_name: "tag:github.com,2024:confidential-containers/Trustee".into()
-        })
+        }),
+        verifiers: None,
     })]
     #[case("./tests/configs/example4.json", Config {
         work_dir: PathBuf::from("/var/lib/attestation-service/"),
@@ -153,7 +162,8 @@ mod tests {
                 cert_url: Some("https://example.io".into()),
                 cert_path: Some("/etc/cert.pem".into())
             })
-        })
+        }),
+        verifiers: None,
     })]
     fn read_config(#[case] config: &str, #[case] expected: Config) {
         let config = std::fs::read_to_string(config).unwrap();
