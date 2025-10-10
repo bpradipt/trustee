@@ -188,7 +188,16 @@ impl AttestationService {
         }
 
         for verification_request in verification_requests {
-            let verifier = verifier::to_verifier(&verification_request.tee)?;
+            info!("AS creating verifier for TEE: {:?}", verification_request.tee);
+            info!("AS self._config.verifiers: {:?}", self._config.verifiers);
+
+            // Pass the generic verifier config
+            let verifier_config = verifier::VerifierConfig {
+                configs: self._config.verifiers.configs.clone(),
+            };
+
+            info!("AS VerifierConfig being passed: {:?}", verifier_config);
+            let verifier = verifier::to_verifier(&verification_request.tee, Some(&verifier_config))?;
 
             let (report_data, runtime_data_claims) = parse_runtime_data(
                 verification_request.runtime_data,
@@ -265,7 +274,11 @@ impl AttestationService {
         tee: Tee,
         tee_parameters: String,
     ) -> Result<String> {
-        let verifier = verifier::to_verifier(&tee)?;
+        // Pass the generic verifier config
+        let verifier_config = verifier::VerifierConfig {
+            configs: self._config.verifiers.configs.clone(),
+        };
+        let verifier = verifier::to_verifier(&tee, Some(&verifier_config))?;
         verifier
             .generate_supplemental_challenge(tee_parameters)
             .await

@@ -23,10 +23,21 @@ pub struct Config {
     /// The Attestation Result Token Broker Config
     #[serde(default)]
     pub attestation_token_broker: AttestationTokenConfig,
+
+    /// Configurations for verifiers.
+    #[serde(default)]
+    pub verifiers: VerifiersConfig,
 }
 
 fn default_work_dir() -> PathBuf {
     PathBuf::from(std::env::var(AS_WORK_DIR).unwrap_or_else(|_| DEFAULT_WORK_DIR.to_string()))
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Default)]
+pub struct VerifiersConfig {
+    /// Generic config storage - each verifier extracts what it needs
+    #[serde(flatten)]
+    pub configs: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Error, Debug)]
@@ -48,6 +59,7 @@ impl Default for Config {
             work_dir: default_work_dir(),
             rvps_config: RvpsConfig::default(),
             attestation_token_broker: AttestationTokenConfig::default(),
+            verifiers: VerifiersConfig::default(),
         }
     }
 }
@@ -66,6 +78,12 @@ impl TryFrom<&Path> for Config {
     ///        "attestation_token_broker": {
     ///            "type": "Ear",
     ///            "duration_min": 5
+    ///        },
+    ///        "verifiers": {
+    ///            "tpm_verifier": {
+    ///                "trusted_ak_keys_dir": "/etc/tpm/trusted_ak_keys",
+    ///                "max_trusted_ak_keys": 100
+    ///            }
     ///        }
     ///    }
     type Error = ConfigError;

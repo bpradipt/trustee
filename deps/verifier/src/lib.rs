@@ -48,7 +48,16 @@ pub mod intel_dcap;
 #[cfg(feature = "tpm-verifier")]
 pub mod tpm;
 
-pub fn to_verifier(tee: &Tee) -> Result<Box<dyn Verifier + Send + Sync>> {
+#[derive(Clone, Debug, Default)]
+pub struct VerifierConfig {
+    /// Generic config storage - each verifier extracts what it needs
+    pub configs: std::collections::HashMap<String, serde_json::Value>,
+}
+
+pub fn to_verifier(
+    tee: &Tee,
+    verifier_config: Option<&VerifierConfig>,
+) -> Result<Box<dyn Verifier + Send + Sync>> {
     match tee {
         Tee::Sev => todo!(),
         Tee::AzSnpVtpm => {
@@ -155,17 +164,28 @@ pub fn to_verifier(tee: &Tee) -> Result<Box<dyn Verifier + Send + Sync>> {
         Tee::Tpm => {
             cfg_if::cfg_if! {
                 if #[cfg(feature = "tpm-verifier")] {
-                    let config_path = std::env::var("TPM_CONFIG_FILE")
-                        .unwrap_or_else(|_| "/etc/tpm_verifier.json".to_string());
-                    log::info!("Using TPM config file: {}", config_path);
-                    let config = match tpm::config::Config::try_from(std::path::Path::new(&config_path)) {
-                        std::result::Result::Ok(c) => c.tpm_verifier,
-                        std::result::Result::Err(e) => {
-                            log::warn!("Failed to load TPM config file: {}. Using default.", e);
-                            tpm::config::TpmVerifierConfig::default()
-                        }
-                    };
+                    log::info!("TPM verifier to_verifier received verifier_config: {:?}", verifier_config);
 
+                    // Extract TPM config from the generic config HashMap
+                    let config = verifier_config
+                        .and_then(|vc| {
+                            log::info!("TPM verifier VerifierConfig contents: {:?}", vc);
+                            vc.configs.get("tpm_verifier")
+                        })
+                        .and_then(|v| {
+                            serde_json::from_value::<tpm::config::TpmVerifierConfig>(v.clone())
+                                .map_err(|e| {
+                                    log::warn!("Failed to parse TPM verifier config: {}", e);
+                                    e
+                                })
+                                .ok()
+                        })
+                        .unwrap_or_else(|| {
+                            log::info!("No TPM verifier config provided, using defaults");
+                            tpm::config::TpmVerifierConfig::default()
+                        });
+
+                    log::info!("TPM verifier using config: {:?}", config);
                     let verifier = tpm::TpmVerifier::new(config)?;
                     Ok(Box::new(verifier) as Box<dyn Verifier + Send + Sync>)
                 } else {

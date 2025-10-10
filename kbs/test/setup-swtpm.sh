@@ -6,7 +6,7 @@ set -euo pipefail
 # needs root pivileges
 
 WORK_DIR="./work"
-TRUSTED_TPM_KEYS_DIR="$WORK_DIR"/tpm_trusted_keys
+TRUSTED_TPM_KEYS_DIR="$WORK_DIR"/attestation-service/tpm_trusted_keys
 TPM_STATE_DIR="/tmp/tpmdir"
 
 setup_swtpm() {

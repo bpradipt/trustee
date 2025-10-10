@@ -13,7 +13,7 @@ pub struct Config {
     pub tpm_verifier: TpmVerifierConfig,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct TpmVerifierConfig {
     pub trusted_ak_keys_dir: Option<PathBuf>,
     /// Maximum number of trusted AK keys to load. Defaults to 100.
