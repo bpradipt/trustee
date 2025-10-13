@@ -185,7 +185,7 @@ mod tests {
         attestation_service: crate::attestation::config::AttestationConfig {
             attestation_service:
                 crate::attestation::config::AttestationServiceConfig::CoCoASBuiltIn(
-                    attestation_service::config::Config {
+                    Box::new(attestation_service::config::Config {
                         work_dir: "/opt/coco/attestation-service".into(),
                         rvps_config: RvpsConfig::GrpcRemote(RvpsRemoteConfig {
                             address: "http://127.0.0.1:50003".into(),
@@ -197,7 +197,7 @@ mod tests {
                             ..Default::default()
                         }),
                         verifier_config: None,
-                    }
+                    })
                 ),
             timeout: crate::attestation::config::DEFAULT_TIMEOUT,
         },
@@ -301,7 +301,7 @@ mod tests {
         attestation_service: crate::attestation::config::AttestationConfig {
             attestation_service:
                 crate::attestation::config::AttestationServiceConfig::CoCoASBuiltIn(
-                    attestation_service::config::Config {
+                    Box::new(attestation_service::config::Config {
                         work_dir: "/opt/confidential-containers/attestation-service".into(),
                         rvps_config: RvpsConfig::BuiltIn(RvpsCrateConfig{
                             storage: ReferenceValueStorageConfig::LocalFs(local_fs::Config{
@@ -314,7 +314,7 @@ mod tests {
                             ..Default::default()
                         }),
                         verifier_config: None,
-                    }
+                    })
                 ),
             timeout: crate::attestation::config::DEFAULT_TIMEOUT,
         },
@@ -436,7 +436,7 @@ mod tests {
         attestation_service: crate::attestation::config::AttestationConfig {
             attestation_service:
                 crate::attestation::config::AttestationServiceConfig::CoCoASBuiltIn(
-                    attestation_service::config::Config {
+                    Box::new(attestation_service::config::Config {
                         work_dir: "/opt/confidential-containers/attestation-service".into(),
                         rvps_config: RvpsConfig::BuiltIn(RvpsCrateConfig::default()),
                         attestation_token_broker: AttestationTokenConfig::Simple(simple::Configuration {
@@ -445,7 +445,7 @@ mod tests {
                             ..Default::default()
                         }),
                         verifier_config: None,
-                    }
+                    })
                 ),
             timeout: crate::attestation::config::DEFAULT_TIMEOUT,
         },

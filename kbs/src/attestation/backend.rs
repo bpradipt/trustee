@@ -145,7 +145,7 @@ impl AttestationService {
         let inner = match config.attestation_service {
             #[cfg(any(feature = "coco-as-builtin", feature = "coco-as-builtin-no-verifier"))]
             AttestationServiceConfig::CoCoASBuiltIn(cfg) => {
-                let built_in_as = super::coco::builtin::BuiltInCoCoAs::new(cfg)
+                let built_in_as = super::coco::builtin::BuiltInCoCoAs::new(*cfg)
                     .await
                     .map_err(|e| Error::AttestationServiceInitialization { source: e })?;
                 Arc::new(built_in_as) as _
