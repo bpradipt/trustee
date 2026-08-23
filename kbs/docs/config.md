@@ -455,11 +455,13 @@ with `name = "external"` owns all backends via a `backends` inline array:
 [[plugins]]
 name = "external"
 backends = [
-  { name = "my-plugin", endpoint = "https://localhost:50051", tls_mode = "tls", ca_cert_path = "/etc/kbs/plugin-ca.pem" },
+  { name = "my-plugin", endpoint = "https://localhost:50051", ca_cert_path = "/etc/kbs/plugin-ca.pem" },
 ]
 ```
 
-Each backend is reachable at `/kbs/v0/external/<name>/...`.
+Each backend is reachable at `/kbs/v0/external/<name>/...`. The endpoint scheme
+selects the transport: `http://` is plaintext, `https://` is TLS. A `tls_mode`
+key is accepted for backwards compatibility but ignored.
 
 **Per-backend fields:**
 

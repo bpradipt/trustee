@@ -111,9 +111,11 @@ pub struct BackendConfig {
 /// ]
 /// ```
 ///
-/// For each backend, if `tls_mode` is omitted, TLS is implied by an `https://` endpoint
-/// (and `ca_cert_path` is then required) and plaintext by `http://`. The explicit
-/// `tls_mode` + `ca_cert_path` form remains supported.
+/// The endpoint scheme decides the transport for each backend: `https://` means
+/// TLS (and `ca_cert_path` is then required), `http://` means plaintext. A
+/// `tls_mode` key is still accepted so older configs keep parsing, but it is
+/// ignored — a backend naming `tls_mode = "tls"` on a `http://` endpoint
+/// connects in plaintext.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct ExternalPluginConfig {
     pub backends: Vec<BackendConfig>,
