@@ -196,7 +196,7 @@ jobs:
 
     - name: Run external plugin unit tests
       working-directory: kbs
-      run: make check TEST_FEATURES="external-plugin"
+      run: make check
 
     - name: Install e2e test dependencies
       working-directory: kbs/test

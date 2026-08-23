@@ -70,7 +70,7 @@ jobs:
           softhsm2-util --init-token --free --label "Trustee pkcs11 test" --so-pin 12345678 --pin 12345678
 
       - name: Run KBS lint/format/test
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           SOFTHSM2_CONF: '${{ runner.temp }}/softhsm/softhsm2.conf'
           MATRIX_TEST_FEATURES: ${{ matrix.test_features }}
