@@ -129,9 +129,12 @@ install-dependencies:
 		libtss2-tctildr0 \
 		openssl; fi
 
+# EXTERNAL_PLUGIN is pinned rather than left to the kbs/Makefile default: the
+# external plugin scenarios need the feature, and a command-line assignment
+# beats an EXTERNAL_PLUGIN=false environment override that `?=` would honour.
 kbs:
 	cd $(PROJECT_DIR) && \
-	make background-check-kbs && \
+	make background-check-kbs EXTERNAL_PLUGIN=true && \
 	install -D --compare $(PROJECT_DIR)/../target/release/kbs $(CURDIR)/kbs
 
 resource-kbs:
@@ -149,12 +152,6 @@ echo-plugin:
 	cd $(PROJECT_DIR) && \
 	cargo build --release --bin external_plugin_test_server --features external-plugin && \
 	install -D --compare $(PROJECT_DIR)/../target/release/external_plugin_test_server $(CURDIR)/echo-plugin
-
-# Build KBS with external-plugin feature
-ext-plugin-kbs:
-	cd $(PROJECT_DIR) && \
-	make background-check-kbs EXTERNAL_PLUGIN=true && \
-	install -D --compare $(PROJECT_DIR)/../target/release/kbs $(CURDIR)/ext-plugin-kbs
 
 # Build resource plugin test server (same binary as echo-plugin, different env vars at runtime)
 plugin-resource: echo-plugin
@@ -501,5 +498,4 @@ clean:  clean-tpm
 		vault-kbs \
 		echo-plugin \
 		plugin-resource \
-		ext-plugin-kbs \
 		work/*

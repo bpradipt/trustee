@@ -51,10 +51,10 @@ echo-plugin-tls.PID: echo-plugin $(ECHO_PLUGIN_SERVER_CERT) $(ECHO_PLUGIN_SERVER
 .PHONY: start-ext-plugin-kbs
 start-ext-plugin-kbs: ext-plugin-kbs.PID
 
-ext-plugin-kbs.PID: ext-plugin-kbs
+ext-plugin-kbs.PID: kbs
 	@printf "${BOLD}start ext-plugin-kbs (insecure)${SGR0}\n"
 	{ \
-		"$(CURDIR)/ext-plugin-kbs" --config-file "$(KBS_CONFIG_PATH)/external-plugin.toml" \
+		"$(CURDIR)/kbs" --config-file "$(KBS_CONFIG_PATH)/external-plugin.toml" \
 		& echo $$! > ext-plugin-kbs.PID; \
 	} && \
 	sleep 1
@@ -63,10 +63,10 @@ ext-plugin-kbs.PID: ext-plugin-kbs
 .PHONY: start-ext-plugin-tls-kbs
 start-ext-plugin-tls-kbs: ext-plugin-tls-kbs.PID
 
-ext-plugin-tls-kbs.PID: ext-plugin-kbs $(ECHO_PLUGIN_CA_CERT)
+ext-plugin-tls-kbs.PID: kbs $(ECHO_PLUGIN_CA_CERT)
 	@printf "${BOLD}start ext-plugin-kbs (TLS)${SGR0}\n"
 	{ \
-		"$(CURDIR)/ext-plugin-kbs" --config-file "$(KBS_CONFIG_PATH)/external-plugin-tls.toml" \
+		"$(CURDIR)/kbs" --config-file "$(KBS_CONFIG_PATH)/external-plugin-tls.toml" \
 		& echo $$! > ext-plugin-tls-kbs.PID; \
 	} && \
 	sleep 1
@@ -112,10 +112,10 @@ $(EXT_PLUGIN_ATTEST_POLICY):
 .PHONY: start-ext-plugin-attest-kbs
 start-ext-plugin-attest-kbs: ext-plugin-attest-kbs.PID
 
-ext-plugin-attest-kbs.PID: ext-plugin-kbs kbs-keys kbs-certs $(EXT_PLUGIN_ATTEST_POLICY)
+ext-plugin-attest-kbs.PID: kbs kbs-keys kbs-certs $(EXT_PLUGIN_ATTEST_POLICY)
 	@printf "${BOLD}start ext-plugin-kbs (attestation)${SGR0}\n"
 	{ \
-		"$(CURDIR)/ext-plugin-kbs" --config-file "$(KBS_CONFIG_PATH)/external-plugin-attest.toml" \
+		"$(CURDIR)/kbs" --config-file "$(KBS_CONFIG_PATH)/external-plugin-attest.toml" \
 		& echo $$! > ext-plugin-attest-kbs.PID; \
 	} && \
 	sleep 1
@@ -214,10 +214,10 @@ plugin-resource.PID: plugin-resource
 .PHONY: start-ext-resource-kbs
 start-ext-resource-kbs: ext-resource-kbs.PID
 
-ext-resource-kbs.PID: ext-plugin-kbs kbs-keys kbs-certs $(EXT_RESOURCE_POLICY)
+ext-resource-kbs.PID: kbs kbs-keys kbs-certs $(EXT_RESOURCE_POLICY)
 	@printf "${BOLD}start ext-resource-kbs${SGR0}\n"
 	{ \
-		"$(CURDIR)/ext-plugin-kbs" --config-file "$(KBS_CONFIG_PATH)/external-plugin-resource.toml" \
+		"$(CURDIR)/kbs" --config-file "$(KBS_CONFIG_PATH)/external-plugin-resource.toml" \
 		& echo $$! > ext-resource-kbs.PID; \
 	} && \
 	sleep 1
@@ -289,10 +289,10 @@ plugin-resource-tls.PID: plugin-resource $(ECHO_PLUGIN_SERVER_CERT) $(ECHO_PLUGI
 .PHONY: start-ext-resource-tls-kbs
 start-ext-resource-tls-kbs: ext-resource-tls-kbs.PID
 
-ext-resource-tls-kbs.PID: ext-plugin-kbs kbs-keys kbs-certs $(ECHO_PLUGIN_CA_CERT) $(EXT_RESOURCE_POLICY)
+ext-resource-tls-kbs.PID: kbs kbs-keys kbs-certs $(ECHO_PLUGIN_CA_CERT) $(EXT_RESOURCE_POLICY)
 	@printf "${BOLD}start ext-resource-kbs (TLS)${SGR0}\n"
 	{ \
-		"$(CURDIR)/ext-plugin-kbs" --config-file "$(KBS_CONFIG_PATH)/external-plugin-resource-tls.toml" \
+		"$(CURDIR)/kbs" --config-file "$(KBS_CONFIG_PATH)/external-plugin-resource-tls.toml" \
 		& echo $$! > ext-resource-tls-kbs.PID; \
 	} && \
 	sleep 1
